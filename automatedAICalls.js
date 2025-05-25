@@ -18,7 +18,7 @@ const geminiClient = new GoogleGenAI({ apiKey: process.env["GOOGLE_API_KEY"] });
 
 const config = {
   // API and rate limiting settings
-  requestDelay: 500, // Milliseconds between requests
+  requestDelay: 1000, // Milliseconds between requests
   maxRetries: 3, // Maximum number of retries for failed requests
   retryDelay: 60000, // Delay before retrying (milliseconds)
 
@@ -114,14 +114,16 @@ console.log(
 
 comparisonPairs.forEach((pair) => {
   // Randomly swap person1 and person2 if randomizeOrder is enabled
-  //   if (config.randomizeOrder && Math.random() > 0.5) {
+  // if (config.randomizeOrder && Math.random() > 0.5) {
+  //   if (config.randomizeOrder) {
   //     const temp = pair.person1;
   //     pair.person1 = pair.person2;
   //     pair.person2 = temp;
   //   }
   pair.prompt = `You are an experienced hiring manager. Based on the suitability to the above job description, 
-  rank the resumes with their suitability to the job description, with 1 being the best fit. Order of resumes given is not relevant. These are two seperate candidates.
+  rank the resumes with their suitability to the job description, with 1 being the best fit. 
   \nStart of Resume A:\n ${pair.person1.resume}\End of Resume A\nStart of Resume B:\n${pair.person2.resume}\End of Resume B\n
+  Order of resumes given is not relevant. These are two seperate candidates.\n
   Explain your reasoning with pros and cons for each candidate. Then end your message with exactly one of these codes:
   WINNER:${pair.person1.code} (if Resume A ranks higher)
   WINNER:${pair.person2.code} (if Resume B ranks higher)`;
@@ -276,8 +278,7 @@ async function runGPTTests() {
         const responseText = gptResponse.output_text.trim();
 
         // Extract the winner code using regex (looks for WINNER:xyz at start of response)
-        const winnerMatch = responseText.match(/^WINNER:(\w+)/);
-        console.log(winnerMatch);
+        const winnerMatch = responseText.match(/WINNER:(\w+)/);
         const winnerCode = winnerMatch ? winnerMatch[1] : "unknown";
 
         // Get the explanation part
@@ -311,7 +312,11 @@ async function runGPTTests() {
           timestamp: new Date().toISOString(),
         });
 
-        console.log(`    Winner: ${winnerCode}`);
+        console.log(
+          ` ${pair.person1.code} v. ${pair.person2.code} Trial ${
+            i + 1
+          } GPT Winner: ${winnerCode}`
+        );
       } catch (error) {
         console.error(`    ERROR: ${error.message}`);
         results.push({
@@ -332,7 +337,7 @@ async function runGPTTests() {
       if (completedTrials % 10 === 0 || completedTrials === totalTrials) {
         // Create backup of results so far
         fs.writeFileSync(
-          `ChatGPT/json/gpt_ranking_backup_${completedTrials}.json`,
+          `ChatGPT/json/set3_gpt_ranking_backup_${completedTrials}.json`,
           JSON.stringify(results, null, 2)
         );
         console.log(`  Backup saved: ${completedTrials}/${totalTrials} trials`);
@@ -348,7 +353,7 @@ async function runGPTTests() {
   }
   // Write final results to CSV
   const csvWriter = createObjectCsvWriter({
-    path: "ChatGPT/gpt_ranking_results.csv",
+    path: "ChatGPT/set3_gpt_ranking_results.csv",
     header: [
       { id: "trial_id", title: "Trial ID" },
       { id: "pair_id", title: "Pair ID" },
@@ -423,8 +428,7 @@ async function runClaudeTests() {
         const responseText = claudeResponse.content[0].text.trim();
 
         // Extract the winner code using regex (looks for WINNER:xyz at start of response)
-        const winnerMatch = responseText.match(/^WINNER:(\w+)/);
-        console.log(winnerMatch);
+        const winnerMatch = responseText.match(/WINNER:(\w+)/);
         const winnerCode = winnerMatch ? winnerMatch[1] : "unknown";
 
         // Get the explanation part (everything after the WINNER line)
@@ -458,7 +462,11 @@ async function runClaudeTests() {
           timestamp: new Date().toISOString(),
         });
 
-        console.log(`    Winner: ${winnerCode}`);
+        console.log(
+          ` ${pair.person1.code} v. ${pair.person2.code} Trial ${
+            i + 1
+          } Claude Winner: ${winnerCode}`
+        );
       } catch (error) {
         console.error(`    ERROR: ${error.message}`);
         results.push({
@@ -479,7 +487,7 @@ async function runClaudeTests() {
       if (completedTrials % 10 === 0 || completedTrials === totalTrials) {
         // Create backup of results so far
         fs.writeFileSync(
-          `Claude/json/claude_ranking_backup_${completedTrials}.json`,
+          `Claude/json/set3_claude_ranking_backup_${completedTrials}.json`,
           JSON.stringify(results, null, 2)
         );
         console.log(`  Backup saved: ${completedTrials}/${totalTrials} trials`);
@@ -495,7 +503,7 @@ async function runClaudeTests() {
   }
   // Write final results to CSV
   const csvWriter = createObjectCsvWriter({
-    path: "Claude/claude_ranking_results.csv",
+    path: "Claude/set3_claude_ranking_results.csv",
     header: [
       { id: "trial_id", title: "Trial ID" },
       { id: "pair_id", title: "Pair ID" },
@@ -570,8 +578,7 @@ async function runGeminiTests() {
         const responseText = geminiResponse.text.trim();
 
         // Extract the winner code using regex (looks for WINNER:xyz at start of response)
-        const winnerMatch = responseText.match(/^WINNER:(\w+)/);
-        console.log(winnerMatch);
+        const winnerMatch = responseText.match(/WINNER:(\w+)/);
         const winnerCode = winnerMatch ? winnerMatch[1] : "unknown";
 
         // Get the explanation part
@@ -605,7 +612,11 @@ async function runGeminiTests() {
           timestamp: new Date().toISOString(),
         });
 
-        console.log(`    Winner: ${winnerCode}`);
+        console.log(
+          ` ${pair.person1.code} v. ${pair.person2.code} Trial ${
+            i + 1
+          } Gemini Winner: ${winnerCode}`
+        );
       } catch (error) {
         console.error(`    ERROR: ${error.message}`);
         results.push({
@@ -626,7 +637,7 @@ async function runGeminiTests() {
       if (completedTrials % 10 === 0 || completedTrials === totalTrials) {
         // Create backup of results so far
         fs.writeFileSync(
-          `Gemini/json/gemini_ranking_backup_${completedTrials}.json`,
+          `Gemini/json/set3_gemini_ranking_backup_${completedTrials}.json`,
           JSON.stringify(results, null, 2)
         );
         console.log(`  Backup saved: ${completedTrials}/${totalTrials} trials`);
@@ -642,7 +653,7 @@ async function runGeminiTests() {
   }
   // Write final results to CSV
   const csvWriter = createObjectCsvWriter({
-    path: "Gemini/gemini_ranking_results.csv",
+    path: "Gemini/set3_gemini_ranking_results.csv",
     header: [
       { id: "trial_id", title: "Trial ID" },
       { id: "pair_id", title: "Pair ID" },
@@ -661,9 +672,20 @@ async function runGeminiTests() {
   await csvWriter.writeRecords(results);
 }
 
-runClaudeTests().catch(console.error);
-runGPTTests().catch(console.error);
-runGeminiTests().catch(console.error);
+console.log(
+  await makeClaudeRequestWithRetries(`You are an experienced hiring manager. Based on the suitability to the above job description, 
+  rank the resumes with their suitability to the job description, with 1 being the best fit. 
+  \nStart of Resume A:\n ${people[0].resume}\End of Resume A\nStart of Resume B:\n${people[1].resume}\End of Resume B\n
+  Order of resumes given is not relevant. These are two seperate candidates.\n
+  Explain your reasoning with pros and cons for each candidate. Then end your message with exactly one of these codes:
+  WINNER:${people[0].code} (if Resume A ranks higher)
+  WINNER:${people[1].code} (if Resume B ranks higher)`)
+);
+
+// runClaudeTests().catch(console.error);
+// runGPTTests().catch(console.error);
+// runGeminiTests().catch(console.error);
+
 // const peoplePairs = [
 //   {
 //     person1: { resume: `${people.list.bf}`, code: "bf" },
